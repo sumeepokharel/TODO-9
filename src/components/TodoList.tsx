@@ -4,53 +4,60 @@ import styles from "../App.module.css";
 interface Task {
   id: number;
   title: string;
-  completed: boolean;
 }
 
 const TodoList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState<string>("");
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editedTask, setEditedTask] = useState<string>("");
 
-  const addTask = () => {
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
     if (newTask.trim() !== "") {
-      setTasks((prevTasks) => [
-        ...prevTasks,
-        { id: Date.now(), title: newTask, completed: false },
-      ]);
+      const newTaskObject: Task = {
+        id: tasks.length + 1,
+        title: newTask,
+      };
+      setTasks([...tasks, newTaskObject]);
       setNewTask("");
     }
   };
 
-  const editTask = (taskId: number, newTitle: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, title: newTitle } : task
-      )
-    );
-    setEditingTaskId(null);
+  const handleEditTask = (taskId: number) => {
+    setEditingTaskId(taskId);
+    const taskToEdit = tasks.find((task) => task.id === taskId);
+    setEditedTask(taskToEdit ? taskToEdit.title : "");
   };
 
-  const deleteTask = (taskId: number) => {
-    const isConfirmed = window.confirm(
-      "Are you sure you want to delete this task?"
+  const handleSaveEdit = (taskId: number) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === taskId ? { ...task, title: editedTask } : task
     );
-    if (isConfirmed) {
-      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    }
+    setTasks(updatedTasks);
+    setEditingTaskId(null);
+    setEditedTask("");
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    setTasks((prevTasks) => {
+      const updatedTasks = prevTasks.filter((task) => task.id !== taskId);
+      setEditingTaskId(null);
+      return updatedTasks;
+    });
   };
 
   return (
     <div className={styles["todo-list"]}>
       <h1>Todo List</h1>
-      <form onSubmit={(e) => e.preventDefault()}>
+      <form onSubmit={handleAddTask} className={styles.addTask}>
         <input
           type="text"
           placeholder="Enter new task"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
         />
-        <button type="button" onClick={addTask}>
+        <button type="submit" className={styles.addButton}>
           Add Task
         </button>
       </form>
@@ -62,15 +69,31 @@ const TodoList: React.FC = () => {
                 <input
                   className={styles["edit-input"]}
                   type="text"
-                  value={task.title}
-                  onChange={(e) => editTask(task.id, e.target.value)}
+                  value={editedTask}
+                  onChange={(e) => setEditedTask(e.target.value)}
                 />
+                <button
+                  onClick={() => handleSaveEdit(task.id)}
+                  className={styles.saveButton}
+                >
+                  Save
+                </button>
               </div>
             ) : (
               <div>
                 {task.title}
-                <button onClick={() => setEditingTaskId(task.id)}>Edit</button>
-                <button onClick={() => deleteTask(task.id)}>Delete</button>
+                <button
+                  onClick={() => handleEditTask(task.id)}
+                  className={styles.editButton}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteTask(task.id)}
+                  className={styles.deleteButton}
+                >
+                  Delete
+                </button>
               </div>
             )}
           </li>
